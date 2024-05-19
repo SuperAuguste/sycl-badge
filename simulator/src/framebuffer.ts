@@ -18,7 +18,7 @@ export class Framebuffer {
     }
 
     drawPoint (color: number, x: number, y: number) {
-        this.bytes[WIDTH * y + x] = color;
+        this.bytes[x * HEIGHT + y] = color;
     }
 
     drawPointUnclipped (color: number, x: number, y: number) {
@@ -27,27 +27,17 @@ export class Framebuffer {
         }
     }
 
-    drawHLineFast(color: number, startX: number, y: number, endX: number) {
-        const yOff = WIDTH * y;
-        this.bytes.fill(color, yOff + startX, yOff + endX);
-    }
-
-    drawHLineUnclipped(color: number, startX: number, y: number, endX: number) {
-        if (y >= 0 && y < HEIGHT) {
-            if (startX < 0) {
-                startX = 0;
-            }
-            if (endX > WIDTH) {
-                endX = WIDTH;
-            }
-            if (startX < endX) {
-                this.drawHLineFast(color, startX, y, endX);
-            }
-        }
-    }
-
     drawHLine(color: number, x: number, y: number, len: number) {
-        this.drawHLineUnclipped(color, x, y, x + len);
+        if (y + len <= 0 || x < 0 || x >= WIDTH) {
+            return;
+        }
+
+        const startX = Math.max(0, x);
+        const endX = Math.min(WIDTH, x + len);
+
+        for (let xx = startX; xx < endX; xx++) {
+            this.drawPoint(color, xx, y);
+        }
     }
 
     drawVLine(color: number, x: number, y: number, len: number) {
@@ -77,7 +67,7 @@ export class Framebuffer {
 
         if (fillColor !== OPTIONAL_COLOR_NONE) {
             for (let yy = startY; yy < endY; ++yy) {
-                this.drawHLineFast(fillColor, startX, yy, endX);
+                this.drawHLine(fillColor, startX, yy, endX);
             }
         }
 
@@ -98,12 +88,12 @@ export class Framebuffer {
 
             // Top edge
             if (y >= 0 && y < HEIGHT) {
-                this.drawHLineFast(strokeColor, startX, y, endX);
+                this.drawHLine(strokeColor, startX, y, endX);
             }
 
             // Bottom edge
             if (endYUnclamped > 0 && endYUnclamped <= HEIGHT) {
-                this.drawHLineFast(strokeColor, startX, endYUnclamped - 1, endX);
+                this.drawHLine(strokeColor, startX, endYUnclamped - 1, endX);
             }
         }
     }
@@ -125,7 +115,7 @@ export class Framebuffer {
         if (strokeColor === OPTIONAL_COLOR_NONE && fillColor === OPTIONAL_COLOR_NONE) {
             return;
         }
-        
+
         let a = width - 1;
         const b = height - 1;
         let b1 = b % 2; // Compensates for precision loss when dividing
@@ -161,8 +151,8 @@ export class Framebuffer {
             const len = east - start;
 
             if (fillColor !== OPTIONAL_COLOR_NONE && len > 0) { // Only draw fill if the length from west to east is not 0
-                this.drawHLineUnclipped(fillColor, start, north, east); /*   I and III. Quadrant */
-                this.drawHLineUnclipped(fillColor, start, south, east); /*  II and IV. Quadrant */
+                this.drawHLine(fillColor, start, north, east); /*   I and III. Quadrant */
+                this.drawHLine(fillColor, start, south, east); /*  II and IV. Quadrant */
             }
 
             const err2 = 2 * err;

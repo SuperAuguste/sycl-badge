@@ -1,9 +1,6 @@
 import { WIDTH, HEIGHT } from "./constants";
-import * as constants from "./constants";
 import * as GL from "./webgl-constants";
 import type { Framebuffer } from "./framebuffer";
-
-const PALETTE_SIZE = 4;
 
 export class WebGLCompositor {
     constructor (public gl: WebGLRenderingContext) {
@@ -66,7 +63,7 @@ export class WebGLCompositor {
             varying vec2 framebufferCoord;
 
             void main () {
-                gl_FragColor = texture2D(framebuffer, framebufferCoord);
+                gl_FragColor = texture2D(framebuffer, vec2(framebufferCoord.y, framebufferCoord.x));
             }
         `);
 
@@ -91,7 +88,7 @@ export class WebGLCompositor {
 
         // Create framebuffer texture
         createTexture(GL.TEXTURE0);
-        gl.texImage2D(GL.TEXTURE_2D, 0, GL.RGB565, WIDTH, HEIGHT, 0, GL.RGB, GL.UNSIGNED_SHORT_5_6_5, null);
+        gl.texImage2D(GL.TEXTURE_2D, 0, GL.RGB565, HEIGHT, WIDTH, 0, GL.RGB, GL.UNSIGNED_SHORT_5_6_5, null);
 
         // Setup static geometry
         const positionAttrib = gl.getAttribLocation(program, "pos");
@@ -111,7 +108,7 @@ export class WebGLCompositor {
         const bytes = framebuffer.bytes;
 
         // Upload framebuffer
-        gl.texImage2D(GL.TEXTURE_2D, 0, GL.RGB565, WIDTH, HEIGHT, 0, GL.RGB, GL.UNSIGNED_SHORT_5_6_5, bytes);
+        gl.texImage2D(GL.TEXTURE_2D, 0, GL.RGB565, HEIGHT, WIDTH, 0, GL.RGB, GL.UNSIGNED_SHORT_5_6_5, bytes);
 
         // Draw the fullscreen quad
         gl.drawArrays(GL.TRIANGLES, 0, 6);
