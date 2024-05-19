@@ -3,6 +3,8 @@ import * as GL from "./webgl-constants";
 import type { Framebuffer } from "./framebuffer";
 
 export class WebGLCompositor {
+    flipped = new Uint16Array(WIDTH * HEIGHT);
+
     constructor (public gl: WebGLRenderingContext) {
         const canvas = gl.canvas;
         canvas.addEventListener("webglcontextlost", event => {
@@ -63,7 +65,7 @@ export class WebGLCompositor {
             varying vec2 framebufferCoord;
 
             void main () {
-                gl_FragColor = texture2D(framebuffer, vec2(framebufferCoord.y, framebufferCoord.x));
+                gl_FragColor = texture2D(framebuffer, framebufferCoord);
             }
         `);
 
@@ -88,7 +90,7 @@ export class WebGLCompositor {
 
         // Create framebuffer texture
         createTexture(GL.TEXTURE0);
-        gl.texImage2D(GL.TEXTURE_2D, 0, GL.RGB565, HEIGHT, WIDTH, 0, GL.RGB, GL.UNSIGNED_SHORT_5_6_5, null);
+        gl.texImage2D(GL.TEXTURE_2D, 0, GL.RGB565, WIDTH, HEIGHT, 0, GL.RGB, GL.UNSIGNED_SHORT_5_6_5, null);
 
         // Setup static geometry
         const positionAttrib = gl.getAttribLocation(program, "pos");
@@ -107,8 +109,18 @@ export class WebGLCompositor {
         const gl = this.gl;
         const bytes = framebuffer.bytes;
 
+        // Rotate and swap byte order flip bytes
+        // Would not be required if WebGL supported `UNSIGNED_SHORT_5_6_5_REV`
+        for (let x = 0; x < WIDTH; x++) {
+            for (let y = 0; y < HEIGHT; y++) {
+                const fi = x + y * WIDTH;
+                const bi = x * HEIGHT + y;
+                this.flipped[fi] = ((bytes[bi] & 0xff) << 8) | (bytes[bi] >> 8);
+            }
+        }
+
         // Upload framebuffer
-        gl.texImage2D(GL.TEXTURE_2D, 0, GL.RGB565, HEIGHT, WIDTH, 0, GL.RGB, GL.UNSIGNED_SHORT_5_6_5, bytes);
+        gl.texImage2D(GL.TEXTURE_2D, 0, GL.RGB565, WIDTH, HEIGHT, 0, GL.RGB, GL.UNSIGNED_SHORT_5_6_5, this.flipped);
 
         // Draw the fullscreen quad
         gl.drawArrays(GL.TRIANGLES, 0, 6);

@@ -28,7 +28,7 @@ export class Framebuffer {
     }
 
     drawHLine(color: number, x: number, y: number, len: number) {
-        if (y + len <= 0 || x < 0 || x >= WIDTH) {
+        if (x + len <= 0 || y < 0 || y >= HEIGHT) {
             return;
         }
 
@@ -36,7 +36,7 @@ export class Framebuffer {
         const endX = Math.min(WIDTH, x + len);
 
         for (let xx = startX; xx < endX; xx++) {
-            this.drawPoint(color, xx, y);
+            this.drawPointUnclipped(color, xx, y);
         }
     }
 
@@ -67,7 +67,7 @@ export class Framebuffer {
 
         if (fillColor !== OPTIONAL_COLOR_NONE) {
             for (let yy = startY; yy < endY; ++yy) {
-                this.drawHLine(fillColor, startX, yy, endX);
+                this.drawHLine(fillColor, startX, yy, endX - startX);
             }
         }
 
@@ -88,12 +88,12 @@ export class Framebuffer {
 
             // Top edge
             if (y >= 0 && y < HEIGHT) {
-                this.drawHLine(strokeColor, startX, y, endX);
+                this.drawHLine(strokeColor, startX, y, endX - startX);
             }
 
             // Bottom edge
             if (endYUnclamped > 0 && endYUnclamped <= HEIGHT) {
-                this.drawHLine(strokeColor, startX, endYUnclamped - 1, endX);
+                this.drawHLine(strokeColor, startX, endYUnclamped - 1, endX - startX);
             }
         }
     }
@@ -151,8 +151,8 @@ export class Framebuffer {
             const len = east - start;
 
             if (fillColor !== OPTIONAL_COLOR_NONE && len > 0) { // Only draw fill if the length from west to east is not 0
-                this.drawHLine(fillColor, start, north, east); /*   I and III. Quadrant */
-                this.drawHLine(fillColor, start, south, east); /*  II and IV. Quadrant */
+                this.drawHLine(fillColor, start, north, east - start); /*   I and III. Quadrant */
+                this.drawHLine(fillColor, start, south, east - start); /*  II and IV. Quadrant */
             }
 
             const err2 = 2 * err;

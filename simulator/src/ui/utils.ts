@@ -44,11 +44,13 @@ export function requestFullscreen () {
  * @returns RGB565 representation
  */
 export function pack565(red: number, green: number, blue: number): number {
-    return blue | (green << 5) | (red << 11);
+    const rev = blue | (green << 5) | (red << 11);
+    return ((rev & 0xff) << 8) | (rev >> 8);
 }
 
 export function unpack565(bgr565: number): [number, number, number] {
-    return [bgr565 >> 11, bgr565 >> 5 & 0b111111, bgr565 & 0b11111];
+    const flipped = ((bgr565 & 0xff) << 8) | (bgr565 >> 8);
+    return [flipped >> 11, flipped >> 5 & 0b111111, flipped & 0b11111];
 }
 
 export function unpack888(bgr888: number): [number, number, number] {
